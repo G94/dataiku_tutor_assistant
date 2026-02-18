@@ -1,0 +1,31 @@
+app:
+  name: dataiku_tutor
+  environment: local
+  deployment_mode: local
+
+embeddings:
+  provider: sentence_transformers
+  model_name: all-MiniLM-L6-v2
+  batch_size: 32
+
+vectorstore:
+  type: faiss
+  index_path: ./storage/faiss.index
+  metadata_path: ./storage/faiss_metadata.json
+
+retrieval:
+  default_mode: hybrid
+  top_k: 5
+  hybrid_weight: 0.6
+  rerank: false
+
+ingestion:
+  source_path: ./data/docs
+  chunk_size: 500
+  chunk_overlap: 100
+
+aws:
+  enabled: false
+  region: us-east-1
+  s3_bucket: dataiku-tutor-docs
+  opensearch_domain: ""
