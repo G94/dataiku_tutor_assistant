@@ -1,10 +1,10 @@
-# Dataiku Tutor Assistant (Architecture Skeleton)
+# Dataiku Tutor Assistant
 
-This repository now contains a **design-only architecture skeleton** for a Retrieval-Augmented Generation (RAG) assistant focused on official Dataiku documentation.
+This repository contains a modular Retrieval-Augmented Generation (RAG) assistant architecture for official Dataiku documentation, including a runnable local ingestion/indexing pipeline.
 
 ## Objectives Covered
 
-- Modular ingestion pipeline for documentation loading, normalization, and chunking.
+- Documentation ingestion pipeline (loader, chunker, index updater).
 - Swappable embedding and vector store abstractions (local-first, cloud-ready).
 - Hybrid retrieval design (keyword + semantic weighted fusion).
 - Response generation layer focused on procedural, step-by-step operational guidance.
@@ -30,6 +30,7 @@ dataiku_tutor/
 ├── ingestion/
 │   ├── chunker.py
 │   ├── loader.py
+│   ├── pipeline.py
 │   └── updater.py
 ├── orchestration/
 │   └── tutor_service.py
@@ -45,8 +46,21 @@ dataiku_tutor/
 └── main.py
 ```
 
+## Run ingestion/indexing locally
+
+1. Put your docs in the configured source folder (default `./data/docs`).
+2. Run the pipeline:
+
+```bash
+python -m dataiku_tutor.ingestion.pipeline
+```
+
+3. The local index and metadata are persisted to:
+   - `./storage/faiss.index`
+   - `./storage/faiss_metadata.json`
+
 ## Notes
 
-- All components are intentionally scaffolded using `NotImplementedError` to keep the project implementation-free for practice.
-- Interfaces and method signatures are intentionally explicit to make later manual implementation and testing straightforward.
-- The API layer is structured to remain stateless so migration to AWS (API Gateway + ECS/Lambda) is clean.
+- The ingestion/vectorstore pipeline is implemented for local execution.
+- API, retrieval fusion, and generation components remain intentionally scaffolded where business behavior is still pending.
+- Configuration controls runtime provider/backends (`dataiku_tutor/config/settings.yaml`).
