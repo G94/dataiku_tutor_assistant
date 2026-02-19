@@ -55,7 +55,9 @@ class DocumentationLoader:
                     )
                     continue
 
-                documents.append(self._parse_with_builtin(file_path=file_path, raw_content=raw))
+                documents.extend(
+                    self._parse_with_builtin(file_path=file_path, raw_content=raw)
+                )
             except Exception:
                 # Skip malformed files and continue indexing; caller can add logging.
                 continue
@@ -66,7 +68,7 @@ class DocumentationLoader:
         """Choose parser implementation by file extension."""
         return self.parsers.get(extension.lower())
 
-    def _parse_with_builtin(self, file_path: Path, raw_content: str) -> Document:
+    def _parse_with_builtin(self, file_path: Path, raw_content: str) -> list[Document]:
         extension = file_path.suffix.lower()
         normalized_text = raw_content
         metadata: dict[str, str] = {
@@ -86,15 +88,59 @@ class DocumentationLoader:
                             "section": str(payload.get("section", "")),
                             "version": str(payload.get("version", "")),
                             "recipe_name": str(payload.get("recipe_name", "")),
+                            "topic": str(payload.get("topic", "")),
+                            "subtopic": str(payload.get("subtopic", "")),
+                            "page_name": str(payload.get("page_name", "")),
+                            "title": str(payload.get("title", "")),
                         }
                     )
+                    document_id = str(payload.get("id", "")).strip() or hashlib.sha1(
+                        str(file_path).encode("utf-8")
+                    ).hexdigest()
+                    return [
+                        Document(id=document_id, content=normalized_text.strip(), metadata=metadata)
+                    ]
+
+                if isinstance(payload, list):
+                    return self._parse_json_documents_list(file_path=file_path, payload=payload)
+
                 else:
                     normalized_text = json.dumps(payload, ensure_ascii=False)
             except json.JSONDecodeError:
                 normalized_text = raw_content
 
         document_id = hashlib.sha1(str(file_path).encode("utf-8")).hexdigest()
-        return Document(id=document_id, content=normalized_text.strip(), metadata=metadata)
+        return [Document(id=document_id, content=normalized_text.strip(), metadata=metadata)]
+
+    def _parse_json_documents_list(self, file_path: Path, payload: list) -> list[Document]:
+        documents: list[Document] = []
+        for index, item in enumerate(payload):
+            if not isinstance(item, dict):
+                continue
+
+            content = self._extract_json_text(item).strip()
+            if not content:
+                continue
+
+            document_id = str(item.get("id", "")).strip() or hashlib.sha1(
+                f"{file_path}:{index}".encode("utf-8")
+            ).hexdigest()
+            metadata = {
+                "source_path": str(file_path),
+                "file_name": file_path.name,
+                "extension": file_path.suffix.lower(),
+                "url": str(item.get("url", "")),
+                "section": str(item.get("section", "")),
+                "version": str(item.get("version", "")),
+                "recipe_name": str(item.get("recipe_name", "")),
+                "topic": str(item.get("topic", "")),
+                "subtopic": str(item.get("subtopic", "")),
+                "page_name": str(item.get("page_name", "")),
+                "title": str(item.get("title", "")),
+            }
+            documents.append(Document(id=document_id, content=content, metadata=metadata))
+
+        return documents
 
     @staticmethod
     def _extract_json_text(payload: dict) -> str:
