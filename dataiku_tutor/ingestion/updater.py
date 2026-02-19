@@ -1,7 +1,7 @@
 """Incremental indexing orchestration for ingestion and re-indexing workflows."""
 
 from __future__ import annotations
-
+import sys
 from dataiku_tutor.domain.models import Chunk
 
 
@@ -17,6 +17,8 @@ class IndexUpdater:
     def run_full_reindex(self, source_path: str) -> int:
         """Rebuild index from scratch and return indexed chunk count."""
         documents = self.loader.load_documents(source_path)
+        print(len(documents))
+        sys.exit(0)
         chunks = self.chunker.chunk(documents)
         embeddings = self._prepare_embeddings(chunks)
 
