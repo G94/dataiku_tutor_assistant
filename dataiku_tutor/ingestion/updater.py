@@ -1,7 +1,7 @@
 """Incremental indexing orchestration for ingestion and re-indexing workflows."""
 
 from __future__ import annotations
-
+import sys
 from dataiku_tutor.domain.models import Chunk
 
 
